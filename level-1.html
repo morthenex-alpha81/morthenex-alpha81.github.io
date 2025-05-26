@@ -1,0 +1,356 @@
+<!DOCTYPE html><html lang="id"><head>
+<meta charset="UTF-8">
+<title>Level 1 - File Explorer</title>
+<style>
+body {background:#000;color:#0f0;font-family:monospace;text-align:center;padding:20px}
+.grid {display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:15px;justify-items:center;margin-top:30px}
+.item {background:#001100;border:1px solid #0f0;width:100px;height:100px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;position:relative}
+.item img {width:40px;height:40px}
+.item span {margin-top:5px;font-size:10px;word-break:break-word;text-align:center}
+#popupMenu {display:none;position:absolute;background:#fff;color:#000;border:1px solid #333;z-index:1000}
+#popupMenu button {display:block;width:100%;background:#fff;color:#000;border:none;padding:6px 10px;text-align:left;cursor:pointer}
+#popupMenu button:hover {background:#eee}
+#popupMenu button.disabled {color:#888;cursor:not-allowed}
+#popupContent {display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#111;color:#0f0;border:1px solid #0f0;padding:20px;width:300px;max-width:85vw;max-height:80vh;overflow-y:auto;z-index:9999}
+.footer {margin-top:40px;font-size:14px;color:#070}
+.thumb-grid {display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:15px;justify-items:center;margin:20px 0}
+.thumb-button {display:flex;flex-direction:column;align-items:center;background:#020;border:1px solid #0f0;color:#0f0;cursor:pointer;font-size:14px;padding:10px;width:120px}
+.thumb-button img {width:100px;height:100px;margin-bottom:5px}
+.thumb-button:hover {background:#040}
+.popup-image {width:278px;height:278px;object-fit:contain;border:1px solid #0f0;margin-bottom:15px}
+#passwordInput {background:#000;color:#0f0;border:1px solid #0f0;padding:5px;font-family:monospace}
+</style>
+</head>
+<body>
+<h1>File Explorer</h1>
+<button onclick="showHelp('help')" style="background:#001100;border:1px solid #00ff00;color:#00ff00;font-family:monospace;padding:5px 15px;cursor:pointer;margin-bottom:15px"><b>[ Help ]</b></button>
+<div class="grid" id="fileGrid"></div>
+<div id="popupMenu"></div>
+<div id="popupContent"></div>
+<audio id="buttonSound" src="assets/audio/button.mp3" preload="auto"></audio>
+<audio id="typeSound" src="assets/audio/type.mp3" preload="auto"></audio>
+<div id="loadingScreen" style="display:none">
+  <div style="color:#0f0;font-family:monospace;margin-bottom:10px">Memproses akses...</div>
+  <div id="loadingBarContainer" style="width:80%;margin:0 auto;border:1px solid #0f0;height:20px;background:#001100">
+    <div id="loadingBar" style="width:0%;height:100%;background:#0f0"></div>
+  </div>
+</div>
+<script>
+const IMAGE_PATH = "assets/images/";
+const AUDIO_PATH = "assets/audio/";
+const MASTER_PASSWORD = "7271V2";
+
+const appState = {
+  files: [
+    { name: "Document images", type: "folder", images: ["Pict_7271VA", "Pict_7271VB", "Pict_7271VC", "Pict_7271VD"] },
+    { name: "Photos", type: "folder", images: ["Dsc_0271", "Dsc_7071", "Dsc_7201", "Dsc_7270"] },
+    { name: "Picture", type: "folder", images: ["File_7000V2", "File_0200V2", "File_0070V2", "File_0001V2"] },
+    { name: "Download", type: "folder", images: ["Img_07020701", "Img_00720701", "Img_00072701", "Img_00007271"] },
+        { 
+      name: "stiker kucing", 
+      type: "folder", 
+      images: Array.from({ length: 17 }, (_, i) => `stiker-${i + 1}`), 
+      path: "assets/stiker/" 
+    },
+    { name: "Access.exe", type: "file" }
+  ],
+  currentItem: null,
+  currentFolder: null
+};
+
+const el = {
+  grid: document.getElementById("fileGrid"),
+  menu: document.getElementById("popupMenu"),
+  popup: document.getElementById("popupContent"),
+  buttonSound: document.getElementById("buttonSound"),
+  typeSound: document.getElementById("typeSound"),
+  loadingScreen: document.getElementById("loadingScreen"),
+  loadingBar: document.getElementById("loadingBar")
+};
+
+// ================= Utils =================
+
+function playSound() {
+  el.buttonSound.currentTime = 0;
+  el.buttonSound.play();
+}
+
+function saveProgress() {
+  localStorage.setItem("filesProgress-level-1", JSON.stringify(appState.files));
+}
+
+function loadProgress() {
+  const s = localStorage.getItem("filesProgress-level-1");
+  return s ? JSON.parse(s) : null;
+}
+
+function closePopup() {
+  helpTyping.stop = true;
+  el.popup.style.display = "none";
+  appState.currentFolder = null;
+}
+
+function showPopup(html) {
+  el.popup.innerHTML = html;
+  el.popup.style.display = "block";
+}
+
+function showLoadingBar() {
+  el.loadingScreen.style.display = "block";
+  el.loadingBar.style.width = "0%";
+  let p = 0;
+  const intv = setInterval(() => {
+    p += 1;
+    el.loadingBar.style.width = p + "%";
+    if (p >= 100) {
+      clearInterval(intv);
+      window.location.href = "level-2.html";
+    }
+  }, 30);
+}
+
+// ================= Render =================
+
+function renderFiles() {
+  el.grid.innerHTML = "";
+  appState.files.forEach((item, index) => {
+    const div = document.createElement("div");
+    div.className = "item";
+    div.dataset.index = index;
+    div.innerHTML = `
+      <img src="${IMAGE_PATH}${item.type === 'folder' ? 'folder.png' : 'file.png'}">
+      <span>${item.name}</span>`;
+    div.ondblclick = e => {
+      e.preventDefault();
+      appState.currentItem = appState.files[index];
+      showMenu(e.pageX, e.pageY);
+    };
+    el.grid.appendChild(div);
+  });
+}
+
+
+
+function renderFolder(folder) {
+  let path = folder.path || IMAGE_PATH;
+  let html = `<h2>${folder.name}</h2><div class='grid'>`;
+  folder.images.forEach(name => {
+    html += `
+      <div class='item' onclick='openImage("${name}", "${path}")'>
+        <img src='${path}file.png'>
+        <span>${name}.jpg</span>
+      </div>`;
+  });
+  html += `</div><button onclick='closePopup()'>Tutup</button>`;
+  showPopup(html);
+}
+
+
+
+
+function openImage(name, path = IMAGE_PATH) {
+  playSound();
+  const html = `
+    <h2>${name}.jpg</h2>
+    <img src='${path}${name}.png' class='popup-image'>
+    <button onclick='renderFolder(appState.currentFolder)'>Tutup</button>`;
+  showPopup(html);
+}
+
+
+// ================= Menu Actions =================
+
+function showMenu(x, y) {
+  playSound();
+  el.menu.style.left = `${x}px`;
+  el.menu.style.top = `${y}px`;
+  el.menu.style.display = "block";
+  el.menu.innerHTML = `
+    <button onclick="openItem()">Open</button>
+    <button onclick="renameItem()">Rename</button>
+    <button onclick="alert('Copy Berhasil!.')">Copy</button>
+    <button onclick="alert('Folder sudah ada!.')">Paste</button>
+    <button onclick="confirmDelete()">Delete</button>
+    <button onclick="alert('Tidak dapat mengunggah folder.')">Upload</button>
+    <button onclick="closeMenu()">Close</button>`;
+}
+
+function closeMenu() {
+  el.menu.style.display = "none";
+}
+
+function openItem() {
+  closeMenu();
+  playSound();
+  const item = appState.currentItem;
+  if (item.type === "folder") {
+    appState.currentFolder = item;
+    renderFolder(item);
+  } else if (item.name === "Access.exe") {
+    showPopup(`
+      <h2>Access.exe</h2>
+      <p>Masukkan kata sandi untuk melanjutkan:</p>
+      <input type='text' id='passwordInput' placeholder='Kode akses...'>
+      <button onclick='checkPassword()'>Akses</button>
+      <button onclick='closePopup()'>Tutup</button>
+    `);
+  }
+}
+
+function renameItem() {
+  const item = appState.currentItem;
+  if (item.name === "Access.exe") {
+    alert("File ini tidak bisa diganti namanya!");
+    closeMenu();
+    return;
+  }
+  const n = prompt("Masukkan nama baru:", item.name);
+  if (n && n.trim() !== "") {
+    item.name = n.trim();
+    saveProgress();
+    renderFiles();
+  } else alert("Nama tidak boleh kosong!");
+  closeMenu();
+}
+
+function confirmDelete() {
+  const item = appState.currentItem;
+  if (item.name === "Access.exe") {
+    alert("File ini tidak bisa dihapus!");
+    closeMenu();
+    return;
+  }
+  const pass = prompt("Masukkan kata sandi untuk menghapus folder:");
+  if (pass.toUpperCase() === MASTER_PASSWORD) {
+    const i = appState.files.indexOf(item);
+    if (i !== -1) {
+      appState.files.splice(i, 1);
+      saveProgress();
+      renderFiles();
+      alert("Folder berhasil dihapus.");
+    }
+  } else alert("Kata sandi salah!");
+  closeMenu();
+}
+
+function checkPassword() {
+  const val = document.getElementById("passwordInput").value.trim();
+  if (val.toUpperCase() === MASTER_PASSWORD) {
+    closePopup();
+    showLoadingBar();
+  } else alert("Kode salah!");
+}
+
+// ================= Help Typing =================
+
+let helpTyping = {
+  lines: [],
+  li: 0,
+  ci: 0,
+  typing: false,
+  stop: false
+};
+
+function showHelp(mode = "intro") {
+  if (mode === "intro") {
+  showPopup(`
+    <h2>Fragmen Memori Ditemukan</h2>
+    <p>Ini adalah data memori milik korban. Sebagian besar telah dihapus oleh pihak tak dikenal.</p>
+    <p>Hanya sedikit fragmen yang berhasil dipulihkan... namun cukup untuk membangun kembali potongan ingatan yang hilang.</p>
+    <p><b>Petunjuk:</b> Klik dua kali pada file atau folder untuk membuka menu tindakan. Telusuri setiap jejaknya.</p>
+    <p>Gunakan <code>Access.exe</code> untuk menembus sistem berikutnya.</p>
+    <button onclick='closePopup()'>Lanjutkan</button>`);
+}else {
+    helpTyping.stop = true;
+    setTimeout(() => {
+      helpTyping.typing = true;
+      helpTyping.stop = false;
+      helpTyping.li = 0;
+      helpTyping.ci = 0;
+
+      showPopup(`
+        <h2 id="helpTitle"></h2>
+        <p id="helpLine1"></p>
+        <p id="helpLine2"></p>
+        <p id="helpLine3"></p>
+        <p id="helpLine4"></p>
+        <div style="margin-top:15px">
+          <button id="skipBtn" onclick="skipHelp()">Skip</button>
+          <button id="closeBtn" onclick="closePopup()" style="display:none">Tutup</button>
+        </div>
+      `);
+
+      helpTyping.lines = [
+        { id: "helpTitle", text: "Panduan Singkat" },
+        { id: "helpLine1", text: "Double-click pada file atau folder untuk membuka menu tindakan." },
+        { id: "helpLine2", text: "Gunakan menu tersebut untuk membuka folder, melihat gambar, atau mengakses Access.exe." },
+        { id: "helpLine3", text: "Temukan petunjuk tersembunyi dalam gambar atau nama file untuk menemukan kode akses." },
+        { id: "helpLine4", text: "Abaikan Nama template sebelum Strip bawah, Nama ekstensi, dan Stiker kucing." }
+      ];
+
+      typeLine();
+    }, 10);
+  }
+}
+
+function skipHelp() {
+  helpTyping.stop = true;
+  const t = helpTyping.lines;
+  t.forEach(l => {
+    const elLine = document.getElementById(l.id);
+    if (elLine) elLine.innerHTML = l.text;
+  });
+  document.getElementById("skipBtn").style.display = "none";
+  document.getElementById("closeBtn").style.display = "inline-block";
+  helpTyping.typing = false;
+}
+
+function typeLine() {
+  if (helpTyping.stop) return;
+  const lines = helpTyping.lines;
+  const t = el.typeSound;
+
+  if (helpTyping.li >= lines.length) {
+    helpTyping.typing = false;
+    document.getElementById("skipBtn").style.display = "none";
+    document.getElementById("closeBtn").style.display = "inline-block";
+    return;
+  }
+
+  const l = lines[helpTyping.li];
+  const elLine = document.getElementById(l.id);
+  if (!elLine) return;
+
+  if (helpTyping.ci < l.text.length) {
+    elLine.innerHTML += l.text.charAt(helpTyping.ci);
+    if (l.text.charAt(helpTyping.ci) !== " ") {
+      t.currentTime = 0;
+      t.play();
+    }
+    helpTyping.ci++;
+    setTimeout(typeLine, 40);
+  } else {
+    helpTyping.li++;
+    helpTyping.ci = 0;
+    setTimeout(typeLine, 150);
+  }
+}
+
+// ================= Event Setup =================
+
+window.onload = () => {
+  renderFiles();
+  showHelp("intro");
+};
+
+window.addEventListener("click", e => {
+  if (e.target && !el.menu.contains(e.target)) closeMenu();
+});
+
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") closePopup();
+});
+</script>
+<div class="footer">Kode Level: 001</div>
+</body>
+</html>
