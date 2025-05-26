@@ -1,40 +1,42 @@
-<!DOCTYPE html><html lang="en">
+<!DOCTYPE html>
+
+<html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ular-ularan</title>
-  <style>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SNAKE</title>
+<style>
     :root {
       --bg: #000;
       --fg: #fff;
       --border: #aaa;
       --snake-head: #00ff00;
     }
+
     body.light-mode {
       --bg: #fff;
       --fg: #000;
       --border: #555;
       --snake-head: #007700;
     }
+
     body {
       background-color: var(--bg);
       color: var(--fg);
       font-family: 'Courier New', monospace;
       text-align: center;
-      padding-top: 20px;
+      padding-top: 2px;
+      transition: background-color 10s linear, color 10s linear;
     }
+
     h1 {
-      margin-bottom: 10px;
+      margin-bottom: 5px;
     }
+
     #score {
-      margin-bottom: 10px;
+      margin-bottom: 5px;
     }
-    #code {
-      margin-bottom: 1px;
-      margin-top: 5px;
-      font-size: 20px;
-      color: #ff0000;
-    }
+
     #game {
       margin: auto;
       width: 300px;
@@ -42,18 +44,21 @@
       background-color: var(--bg);
       position: relative;
       display: grid;
-      grid-template-columns: repeat(20, 15px);
-      grid-template-rows: repeat(20, 15px);
+      grid-template-columns: repeat(15, 20px);
+      grid-template-rows: repeat(15, 20px);
       border: 2px solid var(--border);
     }
+
     .snake {
       border: 1px solid var(--border);
     }
+
     .head {
       background-color: var(--snake-head);
       border: 2px solid var(--border);
       position: relative;
     }
+
     .head::before, .head::after {
       content: '';
       position: absolute;
@@ -63,16 +68,18 @@
       top: 3px;
       border-radius: 50%;
     }
-    .head::before {
-      left: 1px;
+
+    .head::before { left: 1px; }
+    .head::after { right: 1px; }
+
+    .food-ball {
+      border-radius: 50%;
+      background-image: radial-gradient(circle at 30% 30%, #7fff7f, #004d00);
+      box-shadow: 0 0 4px #0f0;
+      width: 100%;
+      height: 100%;
     }
-    .head::after {
-      right: 1px;
-    }
-    .food {
-      background-color: var(--fg);
-      border: 1px solid var(--bg);
-    }
+
     .controls {
       display: grid;
       grid-template-columns: repeat(3, 50px);
@@ -80,10 +87,14 @@
       gap: 5px;
       justify-content: center;
       margin-top: 15px;
+      grid-template-areas:
+        ". up ."
+        "left pause right"
+        ". down .";
     }
-    .controls button, .controls label {
+
+    .controls button {
       font-size: 16px;
-      padding: 10px;
       background-color: var(--bg);
       color: var(--fg);
       border: 2px solid var(--border);
@@ -93,52 +104,14 @@
       align-items: center;
       justify-content: center;
     }
-    .controls .empty {
-      pointer-events: none;
-      background: transparent;
-      border: none;
-    }
-    /* Toggle Switch */
-    .switch {
-      position: relative;
-      display: inline-block;
-      width: 20px;
-      height: 2px;
-    }
-    .switch input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
-    .slider {
-      position: absolute;
-      cursor: pointer;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: #ccc;
-      transition: 0.4s;
-      border-radius: 10px;
-    }
-    .slider::before {
-      position: absolute;
-      content: "";
-      height: 14px;
-      width: 14px;
-      left: 3px;
-      bottom: 3px;
-      background-color: white;
-      transition: 0.4s;
-      border-radius: 50%;
-    }
-    input:checked + .slider {
-      background-color: #2196F3;
-    }
-    input:checked + .slider::before {
-      transform: translateX(20px);
-    }
-    #pause-popup, #code-popup {
+
+    .controls .up    { grid-area: up; }
+    .controls .down  { grid-area: down; }
+    .controls .left  { grid-area: left; }
+    .controls .right { grid-area: right; }
+    .controls .pause { grid-area: pause; }
+
+    #pause-popup {
       display: none;
       position: fixed;
       background: rgba(0, 0, 0, 0.95);
@@ -150,7 +123,8 @@
       border: 2px solid #fff;
       border-radius: 10px;
     }
-    #pause-popup button, #code-popup button {
+
+    #pause-popup button {
       margin-top: 10px;
       padding: 8px 20px;
       font-size: 14px;
@@ -160,160 +134,785 @@
       border: 1px solid var(--border);
       border-radius: 5px;
     }
-    textarea {
-      margin-top: 10px;
-      width: 200px;
-      height: 30px;
-      background-color: var(--bg);
-      color: var(--fg);
-      border: 1px solid var(--border);
-      font-family: monospace;
+
+    .countdown-label {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 12px;
     }
-  </style>
+
+    .food-wrapper {
+      position: relative;
+    }
+
+    .food-core {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+    }
+
+    .red-core {
+      background-image: radial-gradient(circle at 30% 30%, #ff8080, #990000);
+      box-shadow: 0 0 6px 3px rgba(255,0,0,0.6);
+    }
+
+    .blue-core {
+      background-image: radial-gradient(circle at 30% 30%, #80dfff, #004466);
+      box-shadow: 0 0 4px #00ccff;
+    }
+
+    .purple-core {
+      background-image: radial-gradient(circle at 30% 30%, #e0b3ff, #4b0082);
+      box-shadow: 0 0 4px #cc66ff;
+    }
+
+    .snake-trim {
+      opacity: 0.3;
+      transform: scale(0.7);
+      background-color: #900;
+      border: 1px dashed rgba(255,255,255,0.5);
+    }
+  
+.black-core {
+  background-image: radial-gradient(circle at 30% 30%, #aaa, #000);
+  box-shadow: 0 0 6px 3px rgba(150, 150, 150, 0.6);
+}
+.monochrome {
+  background-color: #999 !important;
+  filter: grayscale(1);
+}
+
+#game-over-popup {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: linear-gradient(145deg, #111, #222);
+  color: #fff;
+  padding: 3px;
+  border: 2px solid #fff;
+  border-radius: 12px;
+  z-index: 1000;
+  text-align: center;
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+}
+
+#game-over-popup h2 {
+  margin-bottom: 15px;
+  font-size: 24px;
+  color: #ff4040;
+  text-shadow: 1px 1px #000;
+}
+
+#game-over-popup p {
+  margin: 5px 0;
+  font-size: 16px;
+  color: #ddd;
+}
+
+#game-over-popup button, #help-popup button {
+  margin: 10px 5px 0 5px;
+  padding: 10px 20px;
+  font-size: 16px;
+  background-color: #222;
+  color: #fff;
+  border: 1px solid #888;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.2s;
+}
+
+#game-over-popup button:hover {
+  background-color: #333;
+  transform: scale(1.05);
+  border-color: #fff;
+}
+
+@keyframes spin {
+  0% { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
+}
+
+#help-button {
+  position: fixed;
+  bottom: 120px;
+  right: 10px;
+  font-size: 25px;
+  padding: 5px 10px;
+  border-radius: 1%;
+  background-color: var(--bg);
+  color: var(--fg);
+  border: 2px solid var(--border);
+  cursor: pointer;
+  z-index: 1000;
+}
+
+</style>
 </head>
-<body>
-  <h1>Ular-ularan</h1>
-  <div id="score">Score: 0</div>
-  <div id="code">Kode Level: SNAKE</div>
-  <div id="game"></div>
-  <div class="controls">
-    <label class="switch">
-      <input type="checkbox" onchange="toggleTheme()">
-      <span class="slider"></span>
-    </label>
-    <button onclick="move('w')">W</button>
-    <button onclick="pauseGame()">II</button>
-    <button onclick="move('a')">A</button>
-    <button class="empty"></button>
-    <button onclick="move('d')">D</button>
-    <button class="empty"></button>
-    <button onclick="move('s')">S</button>
-    <button class="empty"></button>
-  </div>
-  <div id="pause-popup">
-    <p>Game paused</p>
-    <button onclick="resumeGame()">Lanjut</button>
-    <button onclick="goLobby()">Keluar</button>
-  </div>
-  <div id="code-popup">
-    <p>Masukkan kode level:</p>
-    <textarea id="level-code" placeholder="masukkan kode level"></textarea><br>
-    <button onclick="goLobby()">Pergi ke lobi</button>
-  </div>
-  <audio id="btn" src="/assets/audio/button.mp3"></audio>
-  <audio id="eat" src="/assets/audio/get.mp3"></audio>
-  <audio id="alert" src="/assets/audio/alert.mp3"></audio>  <script>
-    const game = document.getElementById("game");
-    const scoreText = document.getElementById("score");
-    const btnSound = document.getElementById("btn");
-    const eatSound = document.getElementById("eat");
-    const alertSound = document.getElementById("alert");
+<body class="light-mode">
+<h1>Kode Level: SNAKE</h1>
+<div id="score">Score: 0</div>
+<div id="high-score">High Score: 0</div>
+<div id="game"></div>
+<div class="controls">
+<button class="up" onclick="move('w')">W</button>
+<button class="left" onclick="move('a')">A</button>
+<button class="pause" onclick="pauseGame()">II</button>
+<button class="right" onclick="move('d')">D</button>
+<button class="down" onclick="move('s')">S</button>
+</div>
+<div id="pause-popup">
+<p>Game paused</p>
+<button onclick="resumeGame()">Lanjut</button>
+<button onclick="goLobby()">Keluar</button>
+</div>
+<div id="game-over-popup" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:rgba(0,0,0,0.95); color:#fff; padding:30px; border:2px solid #fff; border-radius:10px; z-index:1000; width: 300px; height: 500px; overflow-y: auto;">
+  <h2>Game Over</h2>
+  <p id="final-score"></p>
+  <p id="final-high-score"></p>
+  <button onclick="restartGame()">Main Lagi</button>
+  <button onclick="goLobby()">Keluar</button>
+</div>
+<audio id="btn" src="assets/audio/type.mp3"></audio>
+<audio id="eat" src="assets/audio/get.mp3"></audio>
+<audio id="alert" src="assets/audio/alert.mp3"></audio>
+<script>
+let blackFood = null;
+let blackStartTime = null;
+const blackDuration = 30000;
+let blackActive = false;
+let blackEffectStep = 0;
+let currentDelay = 200;
 
-    let snake, food, direction, score, interval;
+function spawnBlackFood() {
+  blackFood = spawnFood();
+  blackStartTime = Date.now();
+}
 
-    function resetGame() {
-      snake = [{ x: 10, y: 10 }];
-      direction = { x: 0, y: 0 };
-      food = spawnFood();
-      score = 0;
-      scoreText.textContent = "Score: " + score;
-      if (interval) clearInterval(interval);
-      interval = setInterval(update, 200);
-      draw();
+function maybeSpawnBlackFood() {
+  if (!blackFood && (snake.length >= 20)) {
+    spawnBlackFood();
+  }
+}
+
+function drawBlackFood() {
+  if (blackFood && blackStartTime !== null) {
+    const elapsed = Date.now() - blackStartTime;
+    const progress = Math.min(elapsed / blackDuration, 1);
+    if (progress >= 1) {
+      blackFood = null;
+      blackStartTime = null;
+    } else {
+      const blackDiv = document.createElement("div");
+      blackDiv.classList.add("food-wrapper");
+      blackDiv.style.gridColumnStart = blackFood.x + 1;
+      blackDiv.style.gridRowStart = blackFood.y + 1;
+
+      const core = document.createElement("div");
+      core.classList.add("food-core", "black-core");
+
+      const label = document.createElement("div");
+      label.classList.add("countdown-label");
+      label.textContent = Math.ceil((blackDuration - elapsed) / 1000);
+
+      blackDiv.appendChild(core);
+      blackDiv.appendChild(label);
+      game.appendChild(blackDiv);
     }
+  }
+}
 
-    function spawnFood() {
-      let pos;
-      do {
-        pos = { x: Math.floor(Math.random() * 20), y: Math.floor(Math.random() * 20) };
-      } while (snake.some(s => s.x === pos.x && s.y === pos.y));
-      return pos;
-    }
+function applyBlackEffect() {
+  if (blackActive) {
+    document.querySelectorAll(".snake").forEach(e => e.classList.add("monochrome"));
+  }
+}
 
-    function draw() {
-      game.innerHTML = '';
-      const base = 255;
-      snake.forEach((s, i) => {
-        const div = document.createElement("div");
-        if (i === 0) {
-          div.className = "head";
-        } else {
-          const factor = Math.pow(0.9, i);
-          const val = Math.max(0, Math.floor(base * factor));
-          div.className = "snake";
-          div.style.backgroundColor = `rgb(0, ${val}, 0)`;
-          div.style.border = '1px solid var(--border)';
-        }
-        div.style.gridColumnStart = s.x + 1;
-        div.style.gridRowStart = s.y + 1;
-        game.appendChild(div);
-      });
+const game = document.getElementById("game");
+const scoreText = document.getElementById("score");
+const highScoreText = document.getElementById("high-score");
+const btnSound = document.getElementById("btn");
+const eatSound = document.getElementById("eat");
+const alertSound = document.getElementById("alert");
 
-      const foodDiv = document.createElement("div");
-      foodDiv.className = "food";
-      foodDiv.style.gridColumnStart = food.x + 1;
-      foodDiv.style.gridRowStart = food.y + 1;
-      game.appendChild(foodDiv);
-    }
+const GRID_SIZE = 15;
+let snake, food, direction, nextDirection, score, interval;
+let purpleCounter = 0;
+let purpleEffectStep = 0;
+let blueStartTime = null;
+let purpleStartTime = null;
+const specialDuration = 30000;
 
-    function update() {
-      if (direction.x === 0 && direction.y === 0) return;
+let isLight = true;
+let greenEaten = 0;
+let redFood = null;
+let redStartTime = null;
+const redDuration = 30000;
+let blueFood = null;
+let purpleFood = null;
+let eatEffectIndex = -1;
+let trimQueue = [];
+let purpleActive = false;
+let goldFood = null;
+let goldStartTime = null;
+const goldDuration = 30000;
+let goldCount = 0;
+let rgbFood = null;
+let rgbStartTime = null;
+let rgbActive = false;
+let rgbEffectColorStep = 0;
 
-      const head = {
-        x: (snake[0].x + direction.x + 20) % 20,
-        y: (snake[0].y + direction.y + 20) % 20
-      };
+function loadHighScore() {
+  const saved = localStorage.getItem("SnakeHighScore");
+  return saved ? parseInt(saved) : 0;
+}
 
-      if (snake.some(s => s.x === head.x && s.y === head.y)) {
-        alertSound.play();
-        clearInterval(interval);
-        setTimeout(() => resetGame(), 500);
-        return;
-      }
+function saveHighScore(score) {
+  localStorage.setItem("SnakeHighScore", score);
+}
 
-      snake.unshift(head);
+function resetGame() {
+  snake = [{ x: 7, y: 7 }];
+  direction = { x: 0, y: 0 };
+  nextDirection = { x: 0, y: 0 };
+  food = spawnFood();
+  redFood = null;
+  redStartTime = null;
+  blueFood = null;
+  blueStartTime = null;
+  purpleFood = null;
+  purpleStartTime = null;
+  goldFood = null;
+  goldStartTime = null;
+  blackFood = null;
+  blackStartTime = null;
+  blackActive = false;
+  blackEffectStep = 0;
+  greenEaten = 0;
+  goldCount = 0;
+  currentDelay = 200;
+  eatEffectIndex = -1;
+  trimQueue = [];
+  purpleActive = false;
+  score = 0;
+  scoreText.textContent = "Score: " + score;
+  highScoreText.textContent = "High Score: " + loadHighScore();
+  if (interval) clearInterval(interval);
+  interval = setInterval(update, currentDelay);
+  draw();
+  drawBlackFood();
+  applyBlackEffect();
+}
 
-      if (head.x === food.x && head.y === food.y) {
-        eatSound.play();
-        food = spawnFood();
-        score++;
-        scoreText.textContent = "Score: " + score;
+function spawnFood() {
+  let pos;
+  do {
+    pos = {
+      x: Math.floor(Math.random() * GRID_SIZE),
+      y: Math.floor(Math.random() * GRID_SIZE)
+    };
+  } while (snake.some(s => s.x === pos.x && s.y === pos.y));
+  return pos;
+}
+
+function spawnRedFood() {
+  redFood = spawnFood();
+  redStartTime = Date.now();
+}
+
+function spawnBlueFood() {
+  blueFood = spawnFood();
+  blueStartTime = Date.now();
+}
+
+
+function spawnGoldFood() {
+  goldFood = spawnFood();
+  goldStartTime = Date.now();
+}
+
+function spawnPurpleFood() {
+  purpleFood = spawnFood();
+  purpleStartTime = Date.now();
+}
+
+function spawnRgbFood() {
+  rgbFood = spawnFood();
+  rgbStartTime = Date.now();
+}
+
+function draw() {
+  game.innerHTML = '';
+  snake.forEach((s, i) => {
+    const div = document.createElement("div");
+    div.style.gridColumnStart = s.x + 1;
+    div.style.gridRowStart = s.y + 1;
+    if (i === 0) {
+      div.className = "head";
+    } else {
+      div.className = "snake";
+
+      if (rgbActive) {
+        const r = Math.floor(128 + 127 * Math.sin((i + rgbEffectColorStep) * 0.3));
+        const g = Math.floor(128 + 127 * Math.sin((i + rgbEffectColorStep) * 0.5 + 2));
+        const b = Math.floor(128 + 127 * Math.sin((i + rgbEffectColorStep) * 0.7 + 4));
+        div.style.backgroundColor = `rgb(${r}, ${g}, ${b})`;
       } else {
-        snake.pop();
+        const t = Math.sin(i * 0.5);
+        const g = Math.floor(127 + 127 * Math.cos(t));
+        const b = Math.floor(127 + 127 * Math.sin(t));
+        div.style.backgroundColor = `rgb(0, ${g}, ${b})`;
       }
-
-      draw();
     }
 
-    function move(dir) {
-      btnSound.play();
-      if (dir === "w" && direction.y === 0) direction = { x: 0, y: -1 };
-      if (dir === "s" && direction.y === 0) direction = { x: 0, y: 1 };
-      if (dir === "a" && direction.x === 0) direction = { x: -1, y: 0 };
-      if (dir === "d" && direction.x === 0) direction = { x: 1, y: 0 };
+    if (eatEffectIndex !== -1 && i === eatEffectIndex) {
+      div.style.transform = "scale(1.3)";
+      div.style.zIndex = "2";
+    }
+    game.appendChild(div);
+  });
+
+  trimQueue.forEach(s => {
+    const div = document.createElement("div");
+    div.className = "snake snake-trim";
+    div.style.gridColumnStart = s.x + 1;
+    div.style.gridRowStart = s.y + 1;
+    game.appendChild(div);
+  });
+
+  const foodDiv = document.createElement("div");
+  foodDiv.className = "food-ball";
+  foodDiv.style.gridColumnStart = food.x + 1;
+  foodDiv.style.gridRowStart = food.y + 1;
+  game.appendChild(foodDiv);
+
+  if (redFood && redStartTime !== null) {
+    const elapsed = Date.now() - redStartTime;
+    const progress = Math.min(elapsed / redDuration, 1);
+    if (progress >= 1) {
+      redFood = null;
+      redStartTime = null;
+    } else {
+      const redWrapper = document.createElement("div");
+      redWrapper.classList.add("food-wrapper");
+      redWrapper.style.gridColumnStart = redFood.x + 1;
+      redWrapper.style.gridRowStart = redFood.y + 1;
+
+      const redCore = document.createElement("div");
+      redCore.classList.add("food-core", "red-core");
+
+      const eclipse = document.createElement("div");
+      eclipse.style.position = "absolute";
+      eclipse.style.width = "100%";
+      eclipse.style.height = "100%";
+      eclipse.style.borderRadius = "50%";
+      eclipse.style.background = `radial-gradient(circle, rgba(0,0,0,${progress}) 60%, transparent 100%)`;
+
+      const redLabel = document.createElement("div");
+      redLabel.classList.add("countdown-label");
+      redLabel.textContent = Math.ceil((redDuration - elapsed) / 1000);
+
+      redWrapper.appendChild(redCore);
+      redWrapper.appendChild(eclipse);
+      redWrapper.appendChild(redLabel);
+      game.appendChild(redWrapper);
+    }
+  }
+
+  if (blueFood && blueStartTime !== null) {
+    const elapsed = Date.now() - blueStartTime;
+    const progress = Math.min(elapsed / specialDuration, 1);
+    if (progress >= 1) {
+      blueFood = null;
+      blueStartTime = null;
+    } else {
+      const blueDiv = document.createElement("div");
+      blueDiv.classList.add("food-wrapper");
+      blueDiv.style.gridColumnStart = blueFood.x + 1;
+      blueDiv.style.gridRowStart = blueFood.y + 1;
+
+      const blueCore = document.createElement("div");
+      blueCore.classList.add("food-core", "blue-core");
+
+      const label = document.createElement("div");
+      label.classList.add("countdown-label");
+      label.textContent = Math.ceil((specialDuration - elapsed) / 1000);
+
+      blueDiv.appendChild(blueCore);
+      blueDiv.appendChild(label);
+      game.appendChild(blueDiv);
+    }
+  }
+
+  if (goldFood && goldStartTime !== null) {
+    const elapsed = Date.now() - goldStartTime;
+    const progress = Math.min(elapsed / goldDuration, 1);
+    if (progress >= 1) {
+      goldFood = null;
+      goldStartTime = null;
+    } else {
+      const goldDiv = document.createElement("div");
+      goldDiv.classList.add("food-wrapper");
+      goldDiv.style.gridColumnStart = goldFood.x + 1;
+      goldDiv.style.gridRowStart = goldFood.y + 1;
+
+      const core = document.createElement("div");
+      core.classList.add("food-core");
+      core.style.backgroundImage = "radial-gradient(circle at 30% 30%, gold, #b8860b)";
+      core.style.boxShadow = "0 0 6px 3px rgba(255,215,0,0.7)";
+
+      const label = document.createElement("div");
+      label.classList.add("countdown-label");
+      label.textContent = Math.ceil((goldDuration - elapsed) / 1000);
+
+      goldDiv.appendChild(core);
+      goldDiv.appendChild(label);
+      game.appendChild(goldDiv);
+    }
+  }
+
+  if (rgbFood && rgbStartTime !== null) {
+    const elapsed = Date.now() - rgbStartTime;
+    if (elapsed >= specialDuration) {
+      rgbFood = null;
+      rgbStartTime = null;
+    } else {
+      const rgbDiv = document.createElement("div");
+      rgbDiv.classList.add("food-wrapper");
+      rgbDiv.style.gridColumnStart = rgbFood.x + 1;
+      rgbDiv.style.gridRowStart = rgbFood.y + 1;
+
+      const core = document.createElement("div");
+      core.classList.add("food-core");
+      core.style.backgroundImage = "linear-gradient(45deg, red, green, blue)";
+      core.style.animation = "spin 1s linear infinite";
+
+      const label = document.createElement("div");
+      label.classList.add("countdown-label");
+      label.textContent = Math.ceil((specialDuration - elapsed) / 1000);
+
+      rgbDiv.appendChild(core);
+      rgbDiv.appendChild(label);
+      game.appendChild(rgbDiv);
+    }
+  }
+
+  if (purpleFood && purpleStartTime !== null) {
+    const elapsed = Date.now() - purpleStartTime;
+    const progress = Math.min(elapsed / specialDuration, 1);
+    if (progress >= 1) {
+      purpleFood = null;
+      purpleStartTime = null;
+    } else {
+      const purpleDiv = document.createElement("div");
+      purpleDiv.classList.add("food-wrapper");
+      purpleDiv.style.gridColumnStart = purpleFood.x + 1;
+      purpleDiv.style.gridRowStart = purpleFood.y + 1;
+
+      const core = document.createElement("div");
+      core.classList.add("food-core", "purple-core");
+
+      const label = document.createElement("div");
+      label.classList.add("countdown-label");
+      label.textContent = Math.ceil((specialDuration - elapsed) / 1000);
+
+      purpleDiv.appendChild(core);
+      purpleDiv.appendChild(label);
+      game.appendChild(purpleDiv);
+    }
+  }
+}
+
+function update() {
+  maybeSpawnBlackFood();
+  if (nextDirection.x === 0 && nextDirection.y === 0) return;
+
+  direction = nextDirection;
+
+  const head = {
+    x: (snake[0].x + direction.x + GRID_SIZE) % GRID_SIZE,
+    y: (snake[0].y + direction.y + GRID_SIZE) % GRID_SIZE
+  };
+
+  if (!rgbActive && snake.some(s => s.x === head.x && s.y === head.y)) {
+    alertSound.play();
+    clearInterval(interval);
+    showGameOverPopup();
+    return;
+  }
+
+  snake.unshift(head);
+
+  if (blackFood && head.x === blackFood.x && head.y === blackFood.y) {
+    eatSound.play();
+    eatEffectIndex = 0;
+    score += 133;
+    scoreText.textContent = "Score: " + score;
+    if (score > loadHighScore()) {
+      saveHighScore(score);
+      highScoreText.textContent = "High Score: " + score;
+    }
+    blackActive = true;
+    blackFood = null;
+    blackEffectStep = 0;
+  }
+
+  else if (rgbFood && head.x === rgbFood.x && head.y === rgbFood.y) {
+    eatSound.play();
+    eatEffectIndex = 0;
+    goldCount = 0;
+    score += 333;
+    scoreText.textContent = "Score: " + score;
+    if (score > loadHighScore()) {
+      saveHighScore(score);
+      highScoreText.textContent = "High Score: " + score;
+    }
+    rgbFood = null;
+    rgbStartTime = null;
+    rgbActive = true;
+    rgbEffectColorStep = 0;
+    currentDelay = 75;
+    clearInterval(interval);
+    interval = setInterval(update, currentDelay);
+  }
+
+  else if (blackActive && head.x === food.x && head.y === food.y) {
+    eatSound.play();
+    eatEffectIndex = 0;
+    goldCount = 0;
+    rgbActive = false;
+    greenEaten++;
+    food = spawnFood();
+    score += 100;
+    scoreText.textContent = "Score: " + score;
+    if (score > loadHighScore()) {
+      saveHighScore(score);
+      highScoreText.textContent = "High Score: " + score;
+    }
+    for (let i = 0; i < 2 && snake.length > 4; i++) snake.pop();
+    currentDelay = Math.min(200, currentDelay + 10);
+    clearInterval(interval);
+    interval = setInterval(update, currentDelay);
+    if (snake.length <= 4) {
+      blackActive = false;
+      currentDelay = 200;
+    }
+  }
+
+  else if (head.x === food.x && head.y === food.y) {
+    eatSound.play();
+    eatEffectIndex = 0;
+    greenEaten++;
+    food = spawnFood();
+    score += 100;
+    scoreText.textContent = "Score: " + score;
+    if (score > loadHighScore()) {
+      saveHighScore(score);
+      highScoreText.textContent = "High Score: " + score;
     }
 
-    function pauseGame() {
-      btnSound.play();
-      clearInterval(interval);
-      document.getElementById("pause-popup").style.display = "block";
+    // Spawn makanan spesial
+    if (greenEaten % 23 === 0) spawnRedFood();
+    if (greenEaten % 7 === 0) spawnBlueFood();
+    if (greenEaten % 13 === 0) spawnPurpleFood();
+    if (greenEaten % 17 === 0) spawnGoldFood();
+    if (goldCount > 0 && goldCount % 7 === 0 && !rgbFood) spawnRgbFood();
+    if (goldCount > 0 && goldCount % 5 === 0 && !blackFood) spawnBlackFood();
+
+    // Efek RGB aktif: menyusut 2
+    if (rgbActive) {
+      for (let i = 0; i < 2 && snake.length > 1; i++) snake.pop();
+      rgbEffectColorStep++;
+      document.querySelectorAll(".snake").forEach((s, i) => {
+        const r = Math.floor(128 + 127 * Math.sin((i + rgbEffectColorStep) * 0.3));
+        const g = Math.floor(128 + 127 * Math.sin((i + rgbEffectColorStep) * 0.5 + 2));
+        const b = Math.floor(128 + 127 * Math.sin((i + rgbEffectColorStep) * 0.7 + 4));
+        s.style.backgroundColor = `rgb(${r},${g},${b})`;
+      });
+      if (snake.length <= 1) {
+        rgbActive = false;
+        currentDelay = 200;
+        clearInterval(interval);
+        interval = setInterval(update, currentDelay);
+      }
     }
 
-    function resumeGame() {
-      btnSound.play();
-      interval = setInterval(update, 200);
-      document.getElementById("pause-popup").style.display = "none";
+  } else if (redFood && head.x === redFood.x && head.y === redFood.y) {
+    eatSound.play();
+    eatEffectIndex = 0;
+    score += 200;
+    scoreText.textContent = "Score: " + score;
+    if (score > loadHighScore()) {
+      saveHighScore(score);
+      highScoreText.textContent = "High Score: " + score;
     }
-
-    function goLobby() {
-      btnSound.play();
-      window.location.href = "level-4a2.html";
+    if (snake.length > 5) {
+      trimQueue = snake.slice(5);
+      snake = snake.slice(0, 5);
+      const animTrim = setInterval(() => {
+        trimQueue.shift();
+        if (trimQueue.length === 0) clearInterval(animTrim);
+      }, 100);
     }
+    redFood = null;
+    redStartTime = null;
 
-    function toggleTheme() {
-      document.body.classList.toggle("light-mode");
+  } else if (blueFood && head.x === blueFood.x && head.y === blueFood.y) {
+    eatSound.play();
+    eatEffectIndex = 0;
+    score += 117;
+    scoreText.textContent = "Score: " + score;
+    if (score > loadHighScore()) {
+      saveHighScore(score);
+      highScoreText.textContent = "High Score: " + score;
     }
+    for (let i = 0; i < 2 && snake.length > 2; i++) snake.pop();
+    blueFood = null;
 
-    resetGame();
-  </script></body>
+  } else if (goldFood && head.x === goldFood.x && head.y === goldFood.y) {
+    eatSound.play();
+    eatEffectIndex = 0;
+    score += 223;
+    scoreText.textContent = "Score: " + score;
+    if (score > loadHighScore()) {
+      saveHighScore(score);
+      highScoreText.textContent = "High Score: " + score;
+    }
+    goldCount++;
+    clearInterval(interval);
+    const newDelay = Math.max(100, 200 - goldCount * 15);
+    interval = setInterval(update, newDelay);
+    goldFood = null;
+
+  } else if (purpleFood && head.x === purpleFood.x && head.y === purpleFood.y) {
+    eatSound.play();
+    eatEffectIndex = 0;
+    score += 171;
+    scoreText.textContent = "Score: " + score;
+    if (score > loadHighScore()) {
+      saveHighScore(score);
+      highScoreText.textContent = "High Score: " + score;
+    }
+    purpleActive = true;
+    purpleFood = null;
+
+  } else {
+    snake.pop();
+  }
+
+  if (purpleActive && snake.length > 3) {
+    purpleEffectStep++;
+    if (purpleEffectStep % 2 === 0) {
+      const toTrim = Math.min(2, snake.length - 3);
+      for (let i = 0; i < toTrim; i++) {
+        const removed = snake.pop();
+        trimQueue.push(removed);
+      }
+      const animTrim = setInterval(() => {
+        trimQueue.shift();
+        if (trimQueue.length === 0) clearInterval(animTrim);
+      }, 100);
+      if (snake.length <= 3) {
+        purpleActive = false;
+        purpleEffectStep = 0;
+      }
+    }
+  }
+
+  if (eatEffectIndex !== -1) {
+    eatEffectIndex++;
+    if (eatEffectIndex >= snake.length) {
+      eatEffectIndex = -1;
+    }
+  }
+
+if (rgbActive) {
+  rgbEffectColorStep++;
+}
+if (rgbActive) blackActive = false;
+if (blackActive) rgbActive = false;
+
+  draw();
+  drawBlackFood();
+  applyBlackEffect();
+}
+
+function move(dir) {
+  btnSound.play();
+  if (dir === "w" && direction.y === 0) nextDirection = { x: 0, y: -1 };
+  if (dir === "s" && direction.y === 0) nextDirection = { x: 0, y: 1 };
+  if (dir === "a" && direction.x === 0) nextDirection = { x: -1, y: 0 };
+  if (dir === "d" && direction.x === 0) nextDirection = { x: 1, y: 0 };
+}
+
+function pauseGame() {
+  btnSound.play();
+  clearInterval(interval);
+  document.getElementById("pause-popup").style.display = "block";
+}
+
+function resumeGame() {
+  btnSound.play();
+  interval = setInterval(update, 200);
+  document.getElementById("pause-popup").style.display = "none";
+}
+
+function goLobby() {
+  btnSound.play();
+  window.location.href = "level-4a2.html";
+}
+
+function autoSwitchTheme() {
+  isLight = !isLight;
+  document.body.classList.toggle("light-mode", isLight);
+}
+
+function showGameOverPopup() {
+  document.getElementById("final-score").textContent = "Skor Akhir: " + score;
+  document.getElementById("final-high-score").textContent = "Skor Tertinggi: " + loadHighScore();
+  document.getElementById("game-over-popup").style.display = "block";
+}
+
+function restartGame() {
+  document.getElementById("game-over-popup").style.display = "none";
+  resetGame();
+}
+
+setInterval(autoSwitchTheme, 300000);
+resetGame();
+
+function showHelp() {
+  document.getElementById("help-popup").style.display = "block";
+}
+
+function closeHelp() {
+  document.getElementById("help-popup").style.display = "none";
+}
+
+</script>
+
+<button onclick="showHelp()" id="help-button">?</button>
+
+<div id="help-popup" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); background:#222; color:#fff; padding:20px; border:2px solid #fff; border-radius:10px; z-index:1000; text-align:left; width: 300px; height: 500px; overflow-y: auto;">
+  <h2>Jenis Makanan</h2>
+  <ul style="font-size:14px;">
+    <li><b>Hijau:</b> Makanan normal (+100 poin) menambah 1 blok</li>
+    <li><b>Biru:</b> Mengurangi panjang ular 1 blok, muncul setiap 7 kali makan makanan normal</li>
+    <li><b>Ungu:</b> Secara berkala mengurangi panjang ular hingga tersisa 3 blok.</li>
+    <li><b>Merah:</b> Memangkas tubuh ular menjadi 5 segmen. Muncul setiap 23 kali makan makanan normal</li>
+    <li><b>Emas:</b> Menambah kecepatan ular (+223 poin). Muncul setiap 17 kali makan makanan normal</li>
+    <li><b>Hitam:</b> Mode monokrom, memendekkan tubuh saat makan dan memperlambat ular. Hanya muncul jika 5 kali makan makanan emas</li>
+    <li><b>RGB:</b> Ular jadi berwarna pelangi dan menyusut seiring waktu (+333 poin). Hanya muncul jika 7 kali makan makanan emas tanpa pernah makan makanan hitam</li>
+  </ul>
+  <button onclick="closeHelp()" style="margin-top:10px;">Tutup</button>
+</div>
+
+</body>
 </html>
