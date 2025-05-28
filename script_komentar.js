@@ -374,7 +374,7 @@ stikerBtn.addEventListener("click", () => {
   petunjuk.style.marginBottom = "8px";
   petunjuk.style.width = "100%";
   stikerPopup.appendChild(petunjuk);
-    for (let i = 1; i <= 35; i++) {
+    for (let i = 1; i <= 42; i++) {
       const img = document.createElement("img");
       img.src = `assets/stiker/stiker-${i}.png`;
       img.alt = `stiker-${i}`;

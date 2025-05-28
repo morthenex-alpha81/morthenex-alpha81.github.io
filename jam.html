@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -113,7 +114,6 @@
       }
     }
 
-    /* Notifikasi achievement */
     .notification {
       position: fixed;
       bottom: 30px;
@@ -138,7 +138,6 @@
       100% { opacity: 0; transform: translate(-50%, -20px); }
     }
 
-    /* Tombol Start dan Keluar */
     .btn {
       padding: 15px 30px;
       margin-top: 20px;
@@ -158,7 +157,6 @@
       transform: scale(1.1);
       box-shadow: 0 0 20px #0f0;
     }
-
   </style>
 </head>
 <body>
@@ -181,28 +179,17 @@
 <audio id="tick-sound" src="assets/audio/type.mp3" preload="auto"></audio>
 <audio id="get-sound" src="assets/audio/get.mp3" preload="auto"></audio>
 
-<!-- Tombol Start dan Keluar -->
-<button id="startButton" class="btn">Mulai</button>
+<!-- Tombol Keluar -->
 <button id="exitButton" class="btn" onclick="window.location.href='berangkas.html'">Keluar</button>
 
 <script>
-  const clock = document.querySelector('.clock');
-  const body = document.body;
   const tickSound = document.getElementById('tick-sound');
   const getSound = document.getElementById('get-sound');
   const digitalTime = document.getElementById('digital-time');
   const notification = document.getElementById('notification');
-  const startButton = document.getElementById('startButton');
-  let lastHour = new Date().getHours();
+  const clock = document.querySelector('.clock');
+  const body = document.body;
 
-  // Tombol Mulai: Menyelesaikan pembatasan audio browser
-  startButton.addEventListener('click', () => {
-    tickSound.play().catch(() => {});
-    getSound.play().catch(() => {});
-    startButton.style.display = 'none'; // Sembunyikan tombol mulai setelah ditekan
-  });
-
-  // Tambah angka jam
   for (let i = 1; i <= 12; i++) {
     const num = document.createElement('div');
     num.className = 'number';
@@ -223,28 +210,23 @@
     const minute = now.getMinutes();
     const second = now.getSeconds();
 
-    // Tick sound
     tickSound.currentTime = 0;
     tickSound.play().catch(() => {});
 
-    // Siang/Malam background
     const isNight = hour < 6 || hour >= 18;
     body.classList.toggle('night', isNight);
     body.classList.toggle('day', !isNight);
 
-    // Jarum jam
     document.getElementById('hour').style.transform = `translateX(-50%) rotate(${(hour12 + minute / 60) * 30}deg)`;
     document.getElementById('minute').style.transform = `translateX(-50%) rotate(${(minute + second / 60) * 6}deg)`;
     document.getElementById('second').style.transform = `translateX(-50%) rotate(${second * 6}deg)`;
 
-    // Digital
     digitalTime.textContent = now.toLocaleTimeString();
   }
 
   setInterval(updateClock, 1000);
   updateClock();
 
-  // Partikel
   const canvas = document.getElementById('particles');
   const ctx = canvas.getContext('2d');
   let particles = [];
@@ -291,7 +273,6 @@
     createParticles();
   });
 
-  // Achievement Unlock: Penemu Waktu
   const achievements = JSON.parse(localStorage.getItem("achievements") || "{}");
   if (!achievements["Time_founder"]) {
     achievements["Time_founder"] = true;

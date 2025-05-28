@@ -1,52 +1,67 @@
-<!DOCTYPE html><html lang="en"><head>
+<!DOCTYPE html>
+<html lang="en">
+<head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tic Tac Toe</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>XOXO: Battle of Minds</title>
   <style>
     body {
       display: flex;
       justify-content: center;
       align-items: center;
-      height: 100vh;
-      background: #f4f4f4;
-      font-family: Arial, sans-serif;
       flex-direction: column;
+      height: 100vh;
+      margin: 0;
+      background-color: #71c9f8;
+      font-family: 'Comic Sans MS', 'Arial Rounded MT Bold', sans-serif;
     }
+
     .board {
       display: grid;
       grid-template-columns: repeat(3, 100px);
       grid-template-rows: repeat(3, 100px);
-      gap: 5px;
+      gap: 10px;
+      margin-top: 20px;
     }
+
     .cell {
-      background: #fff;
-      border: 2px solid #333;
-      font-size: 2rem;
+      background-color: #fffcf2;
+      border: 5px solid #333;
+      border-radius: 20px;
+      font-size: 3rem;
+      font-weight: bold;
+      color: #333;
       display: flex;
       justify-content: center;
       align-items: center;
       cursor: pointer;
-      transition: all 0.5s;
+      transition: transform 0.2s ease, background-color 0.3s ease;
+      box-shadow: 3px 3px 0 #222;
     }
-    .winner-x {
-      background-color: #ffcccc !important;
+
+    .cell:hover {
+      transform: scale(1.05);
+      background-color: #ffe8c2;
     }
-    .winner-o {
-      background-color: #ccffcc !important;
+
+    .cell span {
+      display: inline-block;
+      opacity: 0;
+      transform: scale(0.2);
+      animation: popIn 0.3s forwards ease-out;
     }
-    .draw-x {
-      background-color: #ffeeee !important;
-      color: red !important;
-    }
-    .draw-o {
-      background-color: #eaffea !important;
-      color: green !important;
-    }
+
+    .winner-x { background-color: #ff4d4d !important; color: white; }
+    .winner-o { background-color: #40d66f !important; color: white; }
+    .draw-x { background-color: #ffc6c6 !important; color: red !important; }
+    .draw-o { background-color: #c6ffd9 !important; color: green !important; }
+
     .status {
-      margin-top: 20px;
-      text-align: center;
-      font-size: 1.5rem;
+      font-size: 1.8rem;
+      margin-top: 10px;
+      color: #222;
     }
+
     .controls {
       margin-top: 10px;
       display: flex;
@@ -54,37 +69,49 @@
       flex-wrap: wrap;
       justify-content: center;
     }
+
     .controls button {
-      padding: 10px 20px;
+      background-color: #333;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      padding: 12px 24px;
       font-size: 1rem;
       cursor: pointer;
+      box-shadow: 2px 2px 0 #000;
+      transition: background-color 0.2s;
     }
-    #popup {
-      display: none;
-      position: fixed;
-      background: #fff;
-      border: 2px solid #333;
-      padding: 20px;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      box-shadow: 0 0 10px rgba(0,0,0,0.3);
-      z-index: 10;
+
+    .controls button:hover {
+      background-color: #555;
     }
-    #popup input {
-      width: 100%;
-      margin: 10px 0;
-      padding: 10px;
-      font-size: 1rem;
+
+    .footer {
+      margin-top: 20px;
+      font-size: 0.9rem;
+      color: #a44;
     }
-    #popup button {
-      margin-right: 10px;
+
+    @keyframes popIn {
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    @keyframes slideUpOut {
+      0% { opacity: 1; transform: translateY(0); }
+      100% { opacity: 0; transform: translateY(-20px); }
+    }
+
+    .fade-out {
+      animation: slideUpOut 0.5s forwards;
     }
   </style>
 </head>
 <body>
   <div class="board" id="board"></div>
-  <div class="status" id="status"></div>
+  <div class="status" id="status">Player X's turn</div>
   <div class="controls">
     <button onclick="toggleMode()" id="modeBtn">Mode: 2 Players</button>
     <button onclick="startGame()">Restart</button>
@@ -92,7 +119,8 @@
   </div>
 
   <audio id="buttonSound" src="assets/audio/button.mp3"></audio>
-  <audio id="winSound" src="assets/audio/Get.mp3"></audio>
+  <audio id="winSound" src="assets/audio/get.mp3"></audio>
+  <audio id="drawSound" src="assets/audio/reaksi-icon.mp3"></audio>
 
   <script>
     const boardEl = document.getElementById("board");
@@ -100,35 +128,40 @@
     const modeBtn = document.getElementById("modeBtn");
     const buttonSound = document.getElementById("buttonSound");
     const winSound = document.getElementById("winSound");
+    const drawSound = document.getElementById("drawSound");
 
     let board = Array(9).fill("");
     let currentPlayer = "X";
     let gameOver = false;
     let vsAI = false;
 
-    function playButtonSound() {
-      buttonSound.currentTime = 0;
-      buttonSound.play();
-    }
+    let aiSmartMode = false;
+    let aiMaxIntelligence = false;
+    let aiLossCount = 0;
+    let playerWinPatterns = [];
 
-    function playWinSound() {
-      winSound.currentTime = 0;
-      winSound.play();
+    function playSound(sound) {
+      sound.currentTime = 0;
+      sound.play();
     }
 
     function toggleMode() {
-      playButtonSound();
+      playSound(buttonSound);
       vsAI = !vsAI;
       modeBtn.textContent = vsAI ? "Mode: vs AI" : "Mode: 2 Players";
       startGame();
     }
 
     function startGame() {
-      board = Array(9).fill("");
-      currentPlayer = "X";
-      gameOver = false;
-      statusEl.textContent = "Player X's turn";
-      render();
+      boardEl.classList.add("fade-out");
+      setTimeout(() => {
+        board = Array(9).fill("");
+        currentPlayer = "X";
+        gameOver = false;
+        statusEl.textContent = "Player X's turn";
+        render();
+        boardEl.classList.remove("fade-out");
+      }, 500);
     }
 
     function render() {
@@ -136,7 +169,7 @@
       board.forEach((cell, i) => {
         const cellEl = document.createElement("div");
         cellEl.classList.add("cell");
-        cellEl.textContent = cell;
+        cellEl.innerHTML = cell ? `<span>${cell}</span>` : "";
         cellEl.addEventListener("click", () => handleClick(i));
         boardEl.appendChild(cellEl);
       });
@@ -144,7 +177,7 @@
 
     function handleClick(index) {
       if (board[index] || gameOver) return;
-      playButtonSound();
+      playSound(buttonSound);
       board[index] = currentPlayer;
       render();
 
@@ -152,15 +185,31 @@
       if (winPattern) {
         statusEl.textContent = `Player ${currentPlayer} wins!`;
         highlightWinner(winPattern);
-        playWinSound();
+        playSound(winSound);
         gameOver = true;
-        if (vsAI) setTimeout(clearAndRestart, 2000);
+
+        if (vsAI && currentPlayer === "X") {
+          aiLossCount++;
+          aiSmartMode = true;
+          playerWinPatterns.push([...board]);
+          if (aiLossCount >= 2) aiMaxIntelligence = true;
+        } else {
+          aiLossCount = 0;
+          aiSmartMode = false;
+          aiMaxIntelligence = false;
+        }
+
+        if (vsAI) setTimeout(startGame, 2000);
         return;
       } else if (board.every(cell => cell)) {
         statusEl.textContent = "It's a draw!";
         gameOver = true;
         highlightDraw();
-        if (vsAI) setTimeout(clearAndRestart, 2000);
+        playSound(drawSound);
+        aiLossCount = 0;
+        aiSmartMode = false;
+        aiMaxIntelligence = false;
+        if (vsAI) setTimeout(startGame, 2000);
         return;
       }
 
@@ -182,23 +231,91 @@
     function highlightDraw() {
       board.forEach((mark, i) => {
         const cell = boardEl.children[i];
-        if (mark === "X") {
-          cell.classList.add("draw-x");
-        } else if (mark === "O") {
-          cell.classList.add("draw-o");
-        }
+        if (mark === "X") cell.classList.add("draw-x");
+        else if (mark === "O") cell.classList.add("draw-o");
       });
     }
 
     function aiMove() {
-      const best = findBestMove();
-      handleClick(best);
-    }
+  const emptyIndices = board.map((v, i) => v === "" ? i : null).filter(i => i !== null);
+  if (emptyIndices.length === 0) return;
+
+  let chosenIndex;
+  const rand = Math.random();
+
+  if (aiMaxIntelligence || rand < 0.2) {
+    // 20% chance to play perfectly
+    chosenIndex = findPerfectMove();
+  } else if (aiSmartMode || rand < 0.7) {
+    // 50% chance to play best move
+    chosenIndex = findBestMove();
+  } else if (playerWinPatterns.length > 0 && rand < 0.85) {
+    // 15% chance to play based on past player win patterns
+    chosenIndex = findLearnedMove();
+  } else {
+    // 15% chance to play randomly
+    chosenIndex = emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
+  }
+
+  handleClick(chosenIndex);
+}
 
     function findBestMove() {
+      const player = "O";
+      const opponent = "X";
+
+      for (let i = 0; i < board.length; i++) {
+        if (board[i] === "") {
+          board[i] = player;
+          if (checkWinner()) {
+            board[i] = "";
+            return i;
+          }
+          board[i] = "";
+        }
+      }
+
+      for (let i = 0; i < board.length; i++) {
+        if (board[i] === "") {
+          board[i] = opponent;
+          if (checkWinner()) {
+            board[i] = "";
+            return i;
+          }
+          board[i] = "";
+        }
+      }
+
+      if (board[4] === "") return 4;
+
+      const corners = [0, 2, 6, 8].filter(i => board[i] === "");
+      if (corners.length > 0) return corners[Math.floor(Math.random() * corners.length)];
+
+      return emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
+    }
+
+    function findLearnedMove() {
+      const candidateMoves = [];
+
+      for (let pattern of playerWinPatterns) {
+        for (let i = 0; i < pattern.length; i++) {
+          if (pattern[i] === "X" && board[i] === "") {
+            candidateMoves.push(i);
+          }
+        }
+      }
+
+      if (candidateMoves.length > 0) {
+        return candidateMoves[Math.floor(Math.random() * candidateMoves.length)];
+      }
+
+      return findBestMove();
+    }
+
+    function findPerfectMove() {
       let bestScore = -Infinity;
       let move;
-      for (let i = 0; i < 9; i++) {
+      for (let i = 0; i < board.length; i++) {
         if (board[i] === "") {
           board[i] = "O";
           let score = minimax(board, 0, false);
@@ -212,38 +329,48 @@
       return move;
     }
 
-    function minimax(newBoard, depth, isMaximizing) {
-      const winPattern = checkWinner();
-      if (winPattern) {
-        const winner = board[winPattern[0]];
-        if (winner === "O") return 10 - depth;
-        if (winner === "X") return depth - 10;
-      }
+    function minimax(newBoard, depth, isMax) {
+      const result = getWinnerSymbol(newBoard);
+      if (result === "O") return 10 - depth;
+      if (result === "X") return -10 + depth;
       if (newBoard.every(cell => cell)) return 0;
 
-      if (isMaximizing) {
-        let bestScore = -Infinity;
-        for (let i = 0; i < 9; i++) {
+      if (isMax) {
+        let best = -Infinity;
+        for (let i = 0; i < newBoard.length; i++) {
           if (newBoard[i] === "") {
             newBoard[i] = "O";
-            let score = minimax(newBoard, depth + 1, false);
+            best = Math.max(best, minimax(newBoard, depth + 1, false));
             newBoard[i] = "";
-            bestScore = Math.max(score, bestScore);
           }
         }
-        return bestScore;
+        return best;
       } else {
-        let bestScore = Infinity;
-        for (let i = 0; i < 9; i++) {
+        let best = Infinity;
+        for (let i = 0; i < newBoard.length; i++) {
           if (newBoard[i] === "") {
             newBoard[i] = "X";
-            let score = minimax(newBoard, depth + 1, true);
+            best = Math.min(best, minimax(newBoard, depth + 1, true));
             newBoard[i] = "";
-            bestScore = Math.min(score, bestScore);
           }
         }
-        return bestScore;
+        return best;
       }
+    }
+
+    function getWinnerSymbol(b) {
+      const winPatterns = [
+        [0, 1, 2], [3, 4, 5], [6, 7, 8],
+        [0, 3, 6], [1, 4, 7], [2, 5, 8],
+        [0, 4, 8], [2, 4, 6],
+      ];
+      for (let pattern of winPatterns) {
+        const [a, b1, c] = pattern;
+        if (b[a] && b[a] === b[b1] && b[a] === b[c]) {
+          return b[a];
+        }
+      }
+      return null;
     }
 
     function checkWinner() {
@@ -261,23 +388,9 @@
       return null;
     }
 
-    function clearAndRestart() {
-      const cells = Array.from(boardEl.children);
-      cells.forEach((cell, i) => {
-        setTimeout(() => {
-          cell.textContent = "";
-          cell.className = "cell";
-          if (i === cells.length - 1) {
-            setTimeout(startGame, 300);
-          }
-        }, i * 100);
-      });
-    }
-
     startGame();
   </script>
-  <div class="footer">
-    Kode Level: XOXO
-  </div>
+
+  <div class="footer">Kode Level: XOXO</div>
 </body>
 </html>
