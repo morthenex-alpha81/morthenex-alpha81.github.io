@@ -9,116 +9,101 @@
       color: #0f0;
       font-family: monospace;
       margin: 0;
-      padding: 1px;
-      text-align: center;
-      overflow: hidden;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
     }
+
+    header, main, footer {
+      width: 100%;
+      max-width: 600px;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
     button {
       background: #000;
       color: #0f0;
       border: 1px solid #0f0;
       padding: 10px 20px;
-      margin: 5px;
+      margin-top: 10px;
       cursor: pointer;
     }
+
     #selenaImage {
-      width: 100px;
-      position: absolute;
-      top: 30%;
-      left: 50%;
+      width: 150px;
+      margin: 20px auto;
+      display: block;
       border: 1px solid #0f0;
-      transform: translate(-50%, -50%);
-      z-index: 10;
     }
+
     #messageBox {
-      display: none;
-      position: fixed;
-      top: 60%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 290px;
       background: #111;
       border: 2px solid #0f0;
-      color: #0f0;
-      padding: 5px;
-      z-index: 1000;
-      text-align: left;
-    }
-    #messageText {
-      min-height: 80px;
-    }
-    #nextBtn, #startBtn {
-      clear: both;
+      padding: 15px;
       margin-top: 10px;
       display: none;
     }
-    #introText {
-      font-size: 14px;
-      margin-top: 280px;
+
+    #messageText {
+      min-height: 100px;
+      margin-bottom: 10px;
     }
-    .glitch-line {
-      position: absolute;
-      width: 100%;
-      height: 1px;
-      background: #0f0;
-      opacity: 0.05;
-      animation: glitchLine 2s infinite linear;
-    }
-    @keyframes glitchLine {
-      0% { top: 0%; }
-      100% { top: 100%; }
-    }
+
     #reconstructionContainer {
       display: none;
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
+      margin-top: 20px;
       text-align: center;
-      z-index: 1000;
     }
+
     #progressWrapper {
-      width: 300px;
+      width: 100%;
       height: 20px;
       border: 1px solid #0f0;
       margin-top: 10px;
     }
+
     #progressBar {
       height: 100%;
       width: 0%;
       background: #0f0;
     }
-    #levelCode {
-      position: absolute;
-      bottom: 10px;
-      right: 10px;
+
+    footer {
       font-size: 12px;
-      opacity: 1;
       color: #f00;
+      text-align: right;
     }
   </style>
 </head>
 <body>
-  <div class="glitch-line"></div>
-
-  <div id="startContainer">
-    <div id="introText">Data telah diserahkan.</div>
+  <header>
+    <h2 style="text-align: center;">Data telah diserahkan.</h2>
     <button id="startBtn" onclick="startDialogue()">Lanjutkan</button>
-  </div>
+  </header>
 
-  <img id="selenaImage" src="assets/images/selena-4.png" alt="Selena">
+  <main>
+    <img id="selenaImage" src="assets/images/selena-4.png" alt="Selena">
 
-  <div id="messageBox">
-    <div id="messageText"></div>
-    <button id="nextBtn" onclick="playSound('buttonSound'); nextMessage()">Lanjutkan</button>
-  </div>
-
-  <div id="reconstructionContainer">
-    <p id="reconstructionText">Rekonstruksi Bio-Kognitif [0%]</p>
-    <div id="progressWrapper">
-      <div id="progressBar"></div>
+    <div id="messageBox">
+      <div id="messageText"></div>
+      <button id="nextBtn" onclick="playSound('buttonSound'); nextMessage()">Lanjutkan</button>
     </div>
-  </div>
+
+    <div id="reconstructionContainer">
+      <p id="reconstructionText">Rekonstruksi Bio-Kognitif [0%]</p>
+      <div id="progressWrapper">
+        <div id="progressBar"></div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    <div id="levelCode">Kode Level: THX7C</div>
+  </footer>
 
   <audio id="alertSound" src="assets/audio/alert.mp3" preload="auto"></audio>
   <audio id="buttonSound" src="assets/audio/button.mp3" preload="auto"></audio>
@@ -154,7 +139,7 @@
     }
 
     function startDialogue() {
-      document.getElementById("startContainer").style.display = "none";
+      startBtn.style.display = "none";
       messageBox.style.display = "block";
       updateSelenaImage();
       typeText(selenaMonologue[current].text);
@@ -170,13 +155,12 @@
         if (i < text.length) {
           messageText.textContent += text.charAt(i);
           if (i % 3 === 0) {
-            document.getElementById("typeSound").currentTime = 0;
-            document.getElementById("typeSound").play();
+            playSound("typeSound");
           }
           i++;
         } else {
           clearInterval(typeInterval);
-          nextBtn.style.display = "block";
+          nextBtn.style.display = "inline-block";
         }
       }, 35);
     }
@@ -225,7 +209,5 @@
       startBtn.style.display = "inline-block";
     }
   </script>
-
-  <div id="levelCode">Kode Level: THX7C</div>
 </body>
 </html>
