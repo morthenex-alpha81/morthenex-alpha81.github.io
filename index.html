@@ -242,6 +242,7 @@ body::before {
   let gagalHitung = 0;
 
   document.addEventListener('DOMContentLoaded', () => {
+  localStorage.removeItem("level-5b-bukti-3");
   document.querySelectorAll('button').forEach(btn => {
     btn.addEventListener('click', () => {
       clickSound.currentTime = 0;
