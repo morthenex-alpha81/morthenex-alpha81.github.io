@@ -1,0 +1,262 @@
+/* General Body Styles */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #121212;
+    color: #cce7cc;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0;
+    padding: 20px;
+}
+
+/* Overlay for Popup */
+#overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    z-index: 999;
+    display: none;
+}
+
+/* Popup Window Styles */
+#popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #1e1e2f;
+    border: 2px solid #00ff99;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 255, 153, 0.4);
+    padding: 20px;
+    width: 300px;
+    display: none;
+    z-index: 1000;
+}
+
+#popup-edit {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #1e1e2f;
+    border: 2px solid #00ff99;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 255, 153, 0.4);
+    padding: 20px;
+    width: 250px;
+    height: 460px;
+    display: none;
+    z-index: 1000;
+}
+
+#deskripsiTextarea {
+    width: 100%;   /* Mengatur lebar penuh dari kolom */
+    height: calc(90% - 40px);  /* Mengatur tinggi penuh dengan mengurangi padding */
+    border: none;  /* Menghilangkan border default */
+    background-color: transparent; /* Atur latar belakang sesuai kebutuhan */
+    color: #fff;   /* Mengatur warna teks */
+    resize: none;  /* Menghilangkan kemampuan resize jika tidak diinginkan */
+}
+
+/* Popup Description */
+.popup-deskripsi {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #232336;
+    border-radius: 10px;
+    width: 320px;
+    height: 460px;
+    overflow-y: auto;
+    box-shadow: 0 4px 10px rgba(0, 255, 153, 0.4);
+    padding: 25px;
+    z-index: 1000;
+}
+
+/* Header Styles */
+h2, .popup-deskripsi h3 {
+    color: #aaffaa;
+    text-align: center;
+}
+
+h2 {
+    font-size: 24px;
+}
+
+/* Button Styles */
+button {
+    background-color: #00ff99;
+    color: #121212;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 20px;
+    margin-top: 12px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: #00e680;
+}
+
+button:focus {
+    outline: none;
+}
+
+/* Input & Text Area Styles */
+#file-input, #deskripsi, #deskripsiTextarea  {
+    display: inline-block;
+    margin: 15px 0;
+    padding: 12px;
+    width: 100%;
+    background-color: #1a1a2e;
+    color: #cce7cc;
+    border: 1px solid #3a3a5a;
+    border-radius: 8px;
+}
+
+/* Main Container Styles */
+.container {
+    width: 100%;
+    max-width: 500px;
+    background-color: #232336;
+    border-radius: 10px;
+    padding: 25px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    margin-top: 20px;
+}
+
+/* Item Container Styles (Lemari) */
+.lemari {
+    background-color: #1a1a2e;
+    border: 2px solid #6a6a82;
+    border-radius: 12px;
+    padding: 15px;
+    margin-top: 25px;
+    width: 250px; /* Set fixed width */
+    height: 250px; /* Set fixed height */
+    overflow-x: auto; /* Enable horizontal scrolling */
+    white-space: nowrap; /* Prevent wrapping */
+    box-shadow: 0 4px 10px rgba(0, 255, 153, 0.3);
+}
+
+/* Individual Item Styles (Lemari-item) */
+.lemari-item {
+    display: inline-block;
+    margin: 10px;
+    padding: 10px;
+    border-radius: 10px;
+    background-color: #2e2e4a;
+    text-align: center;
+    position: relative;
+    width: 100px; /* Adjust width of each item */
+    height: 120px; /* Adjust height of each item */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.gambar {
+    max-width: 100%;
+    max-height: 80%;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.nama-item {
+    margin-top: 8px;
+    font-size: 13px;
+    color: #cce7cc;
+}
+
+/* Delete Button Styles */
+.hapus-tombol {
+    position: absolute;
+    top: 0px;
+    right: 0;
+    background-color: transparent; /* Remove background */
+    color: #ff6666; /* Set text color */
+    border: none; /* Remove border */
+    border-radius: 0; /* Remove border radius */
+    width: auto; /* Auto width */
+    height: auto; /* Auto height */
+    font-size: 20px; /* Set font size */
+    cursor: pointer;
+    padding: 0; /* Remove padding */
+    margin: 0; /* Remove margin */
+    line-height: 1; /* Adjust line height for proper alignment */
+}
+
+.hapus-tombol:hover {
+    color: #ff3333; /* Change text color on hover */
+}
+
+/* Overlay untuk Pop-up */
+.overlay-nama {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+}
+
+/* Pop-up untuk Input Nama */
+#popup-nama {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    z-index: 1001;
+    width: 300px;
+    text-align: center;
+}
+
+#popup-nama input {
+    width: 80%;
+    padding: 8px;
+    margin-top: 10px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+}
+
+#popup-nama button {
+    margin-top: 10px;
+    padding: 15px 30px;
+    border: none;
+    border-radius: 50px;
+    background: linear-gradient(90deg, #0abde3, #10ac84);
+    color: white;
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    font-size: 14px;
+}
+
+#popup-nama button:hover {
+    background-color: #45a049;
+}
+
+#popup-nama button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+.labubu {
+	 color: #aaffaa;
+    text-align: center;
+    Background-color:#000000;
+    Border:solid purple;
+    Border-radius: 2px;
+    }

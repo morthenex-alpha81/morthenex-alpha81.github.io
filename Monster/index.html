@@ -1,1 +1,29 @@
-
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monster Generator</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Monster Generator</h1>
+        <div class="info" id="monsterInfo">Klik "Generate Monster" untuk membuat makhluk baru.</div>
+        <div class="loading-bar-container" id="loadingBarContainer" style="display: none;">
+            <div class="loading-bar" id="loadingBar"></div>
+        </div>
+        <button class="button" onclick="generateMonster()">Generate Monster</button>
+        <button class="button copy-button" onclick="copyToClipboard()">Copy Info</button>
+            <button class="tombol" onclick="location.href='Laboratorium.html'">Laboratorium</button>
+        <img id="monsterImage" class="monster-image" src="loading.gif" style="display: none;">
+        
+        <!-- Tombol Download -->
+        <a id="downloadButton" class="button" style="display: none;" download="monster-image.png">Download Image</a>
+    </div>
+    
+    <script src="a.js"></script>
+    <script src="generate_image.js"></script>
+    <script src="script.js"></script>
+</body>
+    </html>

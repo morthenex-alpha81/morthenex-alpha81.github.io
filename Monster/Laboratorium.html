@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menampilkan Gambar Monster</title>
+    <link rel="stylesheet" href="style2.css">
+    <style>
+        /* Tambahkan gaya untuk animasi loading */
+        #loading {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <button class="tombol" onclick="location.href='index.html'">Kembali</button>
+
+    <div class="container">
+        <h2>Impor Gambar Monster</h2>
+        <img id="gambar-monster" src="placeholder.png" style="display:block; max-width: 100%; margin-top: 10px;" onclick="pilihGambar()">
+        <input type="file" accept="image/*" id="file-input" style="display:none;" onchange="tampilkanGambar()">
+        <textarea id="deskripsi" placeholder="Tulis deskripsi di sini..."></textarea>
+        <button class="tombol" onclick="generatetext()">Auto Deskripsi</button>
+        <button class="tombol" onclick="simpanKeLemari()">Simpan ke Lemari</button>
+    </div>
+
+    <div class="lemari" id="lemari">
+        <h2>Lemari Gambar</h2>
+        <div id="daftar-gambar"></div>
+    </div>
+
+    <button class="tombol" onclick="location.href='kombinasi.html'">Gabungkan Monster</button>
+
+    <div id="result"></div>
+
+    <div id="loading" class="labubu">Mengambil deskripsi...</div>
+
+    <div class="overlay" id="overlay" onclick="tutupPopup()"></div>
+    <div class="popup-deskripsi" id="deskripsi-popup">
+        <h3 id="popup-nama-item"></h3>
+        <p id="popup-deskripsi"></p>
+        <button onclick="editDeskripsiPopup()">✏️Deskripsi</button>
+        <button onclick="editNamaItem()">✏️Nama</button>
+        <button onclick="tutupPopup()">Tutup</button>
+    </div>
+
+    <!-- Pop-up untuk Edit Deskripsi -->
+    <div class="overlay" id="overlay-edit" style="display: none;" onclick="tutupPopupedit()"></div>
+    <div id="popup-edit" style="display: none;">
+        <textarea id="deskripsiTextarea" rows="4" cols="50"></textarea>
+        <button onclick="simpanDeskripsi()">Simpan</button>
+        <button onclick="tutupPopupedit()">Tutup</button>
+    </div>
+
+    <div class="overlay" id="overlay-nama" style="display: none;" onclick="tutupPopupNama()"></div>
+    <div id="popup-nama" style="display: none;">
+        <input type="text" id="namaInput" placeholder="Masukkan nama item...">
+        <button onclick="simpanNama()">Simpan</button>
+        <button onclick="tutupPopupNama()">Tutup</button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const data = localStorage.getItem('daftarGambar');
+            if (data) {
+                daftarGambar = JSON.parse(data);
+                tampilkanDaftarGambar();
+            }
+        });
+
+        let daftarGambar = [];
+        let currentIndex = null;
+
+        function tampilkanGambar() {
+            const input = document.getElementById('file-input');
+            const gambar = document.getElementById('gambar-monster');
+
+            const file = input.files[0];
+            const reader = new FileReader();
+
+            reader.onloadend = function() {
+                gambar.src = reader.result;
+                gambar.style.display = 'block';
+            }
+
+            if (file) {
+                reader.readAsDataURL(file);
+            } else {
+                gambar.src = "placeholder.png"; // Mengembalikan ke placeholder
+                gambar.style.display = 'block';
+            }
+        }
+        
+        function pilihGambar() {
+    document.getElementById('file-input').click(); // Memicu input file saat gambar di-klik
+}
+
+        function simpanKeLemari() {
+            const gambarMonster = document.getElementById('gambar-monster').src;
+            const deskripsi = document.getElementById('deskripsi').value;
+
+            if (gambarMonster === "placeholder.png") {
+                alert("Silakan pilih gambar.");
+                return;
+            }
+
+            if (gambarMonster && deskripsi) {
+                document.getElementById('overlay-nama').style.display = 'block';
+                document.getElementById('popup-nama').style.display = 'block';
+            } else {
+                alert("Silakan unggah gambar dan tulis deskripsi.");
+            }
+        }
+
+        function simpanNama() {
+            const nama = document.getElementById('namaInput').value.trim();
+            const gambarMonster = document.getElementById('gambar-monster').src;
+            const deskripsi = document.getElementById('deskripsi').value;
+
+            if (nama) {
+                daftarGambar.push({gambar: gambarMonster, deskripsi: deskripsi, nama: nama});
+                localStorage.setItem('daftarGambar', JSON.stringify(daftarGambar));
+                tampilkanDaftarGambar();
+                
+                document.getElementById('file-input').value = '';
+                document.getElementById('gambar-monster').src = "placeholder.png"; // Reset ke placeholder
+                document.getElementById('deskripsi').value = '';
+                document.getElementById('namaInput').value = ''; // Reset input nama
+                tutupPopupNama();
+            }
+        }
+
+        function tutupPopupNama() {
+            document.getElementById('popup-nama').style.display = 'none'; // Sembunyikan pop-up nama
+            document.getElementById('overlay-nama').style.display = 'none'; // Sembunyikan overlay
+        }
+
+        function editNamaItem() {
+            const nama = prompt("Edit nama item:", daftarGambar[currentIndex].nama);
+            if (nama !== null) {
+                daftarGambar[currentIndex].nama = nama;
+                localStorage.setItem('daftarGambar', JSON.stringify(daftarGambar));
+                tampilkanDaftarGambar();
+                tutupPopup();
+            }
+        }
+        
+        function tampilkanDaftarGambar() {
+            const daftarElement = document.getElementById('daftar-gambar');
+            daftarElement.innerHTML = '';
+
+            daftarGambar.forEach((item, index) => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'lemari-item';
+
+                const img = document.createElement('img');
+                img.src = item.gambar;
+                img.className = 'gambar';
+                img.onclick = function() {
+                    currentIndex = index;
+                    document.getElementById('popup-nama-item').textContent = item.nama;
+                    document.getElementById('popup-deskripsi').textContent = item.deskripsi;
+                    document.getElementById('overlay').style.display = 'block';
+                    document.getElementById('deskripsi-popup').style.display = 'block';
+                };
+
+                const namaItem = document.createElement('div');
+                namaItem.className = 'nama-item';
+                namaItem.textContent = item.nama;
+
+                const hapusTombol = document.createElement('button');
+                hapusTombol.className = 'hapus-tombol';
+                hapusTombol.textContent = '❎';
+                hapusTombol.onclick = function(event) {
+                    event.stopPropagation();
+                    hapusItem(index);
+                };
+
+                itemDiv.appendChild(img);
+                itemDiv.appendChild(namaItem);
+                itemDiv.appendChild(hapusTombol);
+                daftarElement.appendChild(itemDiv);
+            });
+        }
+
+        function hapusItem(index) {
+            daftarGambar.splice(index, 1);
+            localStorage.setItem('daftarGambar', JSON.stringify(daftarGambar));
+            tampilkanDaftarGambar();
+        }
+
+        function tutupPopup() {
+            document.getElementById('overlay').style.display = 'none';
+            document.getElementById('deskripsi-popup').style.display = 'none';
+        }
+
+        function editDeskripsiPopup() {
+            const textarea = document.getElementById('deskripsiTextarea');
+            textarea.value = daftarGambar[currentIndex].deskripsi; // Isi textarea dengan deskripsi saat ini
+            document.getElementById('popup-edit').style.display = 'block'; // Tampilkan pop-up edit
+            document.getElementById('overlay-edit').style.display = 'block'; // Tampilkan overlay
+            document.getElementById('overlay').style.display = 'none';
+            document.getElementById('deskripsi-popup').style.display = 'none';
+        }
+
+        function simpanDeskripsi() {
+            const deskripsi = document.getElementById('deskripsiTextarea').value;
+            if (deskripsi !== null) {
+                daftarGambar[currentIndex].deskripsi = deskripsi;
+                localStorage.setItem('daftarGambar', JSON.stringify(daftarGambar));
+                tampilkanDaftarGambar();
+                tutupPopupedit();
+            }
+        }
+
+        function tutupPopupedit() {
+            document.getElementById('popup-edit').style.display = 'none'; // Sembunyikan pop-up edit
+            document.getElementById('overlay-edit').style.display = 'none'; // Sembunyikan overlay
+        }
+
+        async function fetchRandomDescriptions() {
+            try {
+                const files = ["Z14", "Z1", "Z4", "Z2", "Z10", "Z11", "Z0", "Z3", "Z5", "Z7", "Z9", "Z8", "Z6", "Z12", "Z13"];
+                const dataPromises = files.map(file => fetch(`${file}.json`).then(response => response.json()));
+                const allData = await Promise.all(dataPromises);
+
+                const description = allData.map((data) => {
+                    const key = Object.keys(data)[0];
+                    const randomOption = data[key][Math.floor(Math.random() * data[key].length)];
+                    return `${key}: ${randomOption}`;
+                });
+
+                return description.join(", ");
+            } catch (error) {
+                console.error("Error fetching descriptions:", error);
+                return "Deskripsi tidak tersedia.";
+            }
+        }
+
+        async function generatetext() {
+            const gambarMonster = document.getElementById('gambar-monster').src;
+
+            document.getElementById('loading').style.display = 'block'; // Tampilkan animasi loading
+
+            // Dapatkan deskripsi acak terlebih dahulu
+            const randomDescriptions = await fetchRandomDescriptions();
+
+            const response = await fetch('https://api-inference.huggingface.co/models/Qwen/Qwen2.5-72B-Instruct/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    "Authorization": "Bearer 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",
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: "Qwen/Qwen2.5-72B-Instruct",
+      messages: [
+        { role: "user", content: `Create a description for me with key-value pairs for a fantasy creature with appropriate attributes, And create a random name based on the initials. Here is some context: ${randomDescriptions}, Do not use asterisks` }
+      ],
+      max_tokens: 500,
+      stream: false
+    })
+  });
+
+  if (response.ok) {
+    const data = await response.json();
+    const deskripsi = data.choices[0].message.content;
+    document.getElementById('deskripsi').value = deskripsi;
+  } else {
+    alert("Terjadi kesalahan dalam mendapatkan deskripsi.");
+  }
+
+  document.getElementById('loading').style.display = 'none'; // Sembunyikan animasi loading
+}
+    </script>
+</body>
+</html>

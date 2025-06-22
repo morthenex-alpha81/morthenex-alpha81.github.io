@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gabungkan Item</title>
+    <style>
+        /* Gaya dasar */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #1e1e2f; /* Warna latar belakang nila gelap */
+            color: #ddd; /* Warna teks */
+        }
+
+        h2 {
+            color: #f0f0f5;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        /* Tombol */
+        .tombol {
+            padding: 10px 20px;
+            background-color: #5e60ce; /* Warna nila */
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+            display: inline-block;
+            margin-top: 20px;
+        }
+
+        .tombol:hover {
+            background-color: #4a4cc7; /* Warna hover */
+        }
+
+        /* Container untuk pemilihan item */
+        .select-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        label {
+            font-size: 1rem;
+            margin-top: 10px;
+            color: #a0a0b0;
+        }
+
+        select {
+            width: 200px;
+            padding: 8px;
+            margin-top: 5px;
+            border: 1px solid #5e60ce;
+            border-radius: 5px;
+            background-color: #282a36;
+            color: #f8f8f2;
+        }
+
+        /* Hasil Gambar */
+        #result {
+            margin-top: 20px;
+            text-align: center;
+            background-color: #2a2a40;
+            padding: 20px;
+            border-radius: 10px;
+            color: #f0f0f5;
+            font-size: 16px;
+        }
+
+        #result img {
+            max-width: 200px;
+            margin-top: 10px;
+            border-radius: 10px;
+            border: 1px solid #5e60ce;
+        }
+
+        /* Hasil Deskripsi */
+        #description {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #a0a0b0;
+            text-align: center;
+        }
+
+        /* Loading spinner */
+        #loading {
+            display: none;
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        /* Tata letak kontainer utama */
+        .main-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <button class="tombol" onclick="location.href='Laboratorium.html'">Kembali</button>
+        <h2>Pilih Dua Item untuk Digabungkan</h2>
+
+        <div class="select-container">
+            <label for="item1">Male Sample:</label>
+            <select id="item1"></select>
+            
+            <label for="item2">Female Sample:</label>
+            <select id="item2"></select>
+        </div>
+        
+        <button class="tombol" onclick="gabungkanItem()">Gabungkan</button>
+        <div id="result">Hasil gambar akan muncul di sini.</div>
+        <div id="description"></div>
+        <div id="loading" style="display:none;">
+            <img src="loading.gif" alt="Loading" style="width: 30px; vertical-align: middle;"> 
+            Deskripsi baru sedang dimuat...
+        </div>
+        <a id="downloadLink" class="tombol" style="display:none; margin-top:10px;" download="gabungan.png">Download Gambar</a>
+        <button id="copyButton" class="tombol" style="display:none; margin-top:10px;" onclick="copyDescription()">Salin Deskripsi</button>
+    </div>
+
+    <script>
+        let daftarGambar = JSON.parse(localStorage.getItem('daftarGambar')) || [];
+
+        const select1 = document.getElementById('item1');
+        const select2 = document.getElementById('item2');
+        const downloadLink = document.getElementById('downloadLink');
+        const descriptionDiv = document.getElementById('description');
+        const loadingDiv = document.getElementById('loading');
+        const copyButton = document.getElementById('copyButton');
+
+        function loadItems() {
+    daftarGambar.forEach((item, index) => {
+        const option1 = document.createElement('option');
+        option1.value = index;
+        option1.text = item.nama; // Menggunakan nama item
+        select1.appendChild(option1);
+
+        const option2 = document.createElement('option');
+        option2.value = index;
+        option2.text = item.nama; // Menggunakan nama item
+        select2.appendChild(option2);
+    });
+}
+        loadItems();
+
+        function fetchMonsterImage(prompt) {
+            const apiUrl = "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-3.5-large";
+            return fetch(apiUrl, {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer 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`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ inputs: prompt }),
+            }).then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok ' + response.statusText);
+                }
+                return response.blob();
+            });
+        }
+
+        function fetchDescription(item1, item2) {
+            const url = 'https://api-inference.huggingface.co/models/Qwen/Qwen2.5-72B-Instruct/v1/chat/completions';
+            const token = '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';
+
+            const requestData = {
+                model: "Qwen/Qwen2.5-72B-Instruct",
+                messages: [
+                    { role: "user", content: `Create a description for me with key-value pairs for a fantasy creature with based on the combination of the following two descriptions: ${item1} and ${item2} Don't use asterisks.` }
+                ],
+                max_tokens: 1000,
+                stream: false
+            };
+
+            return fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestData)
+            }).then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok ' + response.statusText);
+                }
+                return response.json();
+            });
+        }
+
+        function copyDescription() {
+            const descriptionText = descriptionDiv.innerText;
+            navigator.clipboard.writeText(descriptionText).then(() => {
+                alert("Deskripsi berhasil disalin ke clipboard!");
+            }).catch(err => {
+                console.error("Gagal menyalin deskripsi:", err);
+            });
+        }
+
+        function gabungkanItem() {
+            const index1 = select1.value;
+            const index2 = select2.value;
+
+            if (index1 === index2) {
+                alert("Pilih dua item yang berbeda.");
+                return;
+            }
+
+            const deskripsi1 = daftarGambar[index1].deskripsi;
+            const deskripsi2 = daftarGambar[index2].deskripsi;
+            const promptGabungan = `${deskripsi1} Combined with ${deskripsi2}`;
+
+            // Menampilkan pesan loading
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `<img src="loading.gif" alt="Loading" style="max-width: 200px;">`;
+            loadingDiv.style.display = "block"; // Tampilkan spinner loading
+            downloadLink.style.display = "none"; // Sembunyikan tombol download sementara
+            descriptionDiv.innerHTML = ""; // Reset deskripsi
+            copyButton.style.display = "none"; // Sembunyikan tombol salin
+
+            // Memanggil API untuk menghasilkan gambar baru
+            fetchMonsterImage(promptGabungan)
+                .then(blob => {
+                    const url = URL.createObjectURL(blob);
+                    
+                    // Menampilkan gambar hasil gabungan
+                    resultDiv.innerHTML = `<h3>Hasil Gabungan</h3><img src="${url}" alt="Gambar Gabungan">`;
+                    
+                    // Menyiapkan tombol download
+                    downloadLink.href = url;
+                    downloadLink.style.display = "inline-block"; // Tampilkan tombol download
+
+                    // Mendapatkan deskripsi baru dari API
+                    return fetchDescription(deskripsi1, deskripsi2);
+                })
+                .then(data => {
+                    const newDescription = data.choices[0].message.content;
+                    descriptionDiv.innerHTML = `<strong> ${newDescription} </strong>`;
+                    copyButton.style.display = "inline-block"; // Tampilkan tombol salin
+                })
+                .catch(error => {
+                    console.error("Gagal menghasilkan gambar:", error);
+                    resultDiv.innerHTML = "Terjadi kesalahan dalam menghasilkan gambar.";
+                })
+                .finally(() => {
+                    loadingDiv.style.display = "none"
+ // Sembunyikan spinner loading setelah proses selesai
+                });
+        }
+    </script>
+</body>
+</html>

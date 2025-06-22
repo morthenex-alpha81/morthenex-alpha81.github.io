@@ -1,0 +1,16 @@
+{
+  "diet": [
+    "Herbivore",
+    "Carnivore",
+    "Omnivore",
+    "Insectivore",
+    "Frugivore",
+    "Nectarivore",
+    "Detritivore",
+    "Planktivore",
+    "Fungivore",
+    "Scavenger",
+    "Specialist",
+    "Generalist"
+  ]
+}

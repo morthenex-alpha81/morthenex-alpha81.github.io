@@ -1,0 +1,9 @@
+{
+  "speed": [
+    "slow",
+    "normal",
+    "fast",
+    "very fast",
+    "very slow"
+  ]
+}
